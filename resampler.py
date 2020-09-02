@@ -19,7 +19,7 @@ def write_df_csv(path, filename, df):
         df.to_csv(pathfile, sep=';')
     else:
         overwrite = input("WARNING: " + pathfile + " already exists! Do you want to overwrite <y/n>? \n ")
-        if overwrite == 'y':
+        if overwrite == 'y' or overwrite == 'Y':
             df.to_csv(pathfile, sep=';')
         elif overwrite == 'n':
             new_filename = input("Type new filename: \n ")
@@ -28,18 +28,18 @@ def write_df_csv(path, filename, df):
             print("Not a valid input. Data is NOT saved!\n")
 
 # Read Experiment Dataframe
-filename = '20151005'
+filename = '20160114'
 Analysis = 'LongCure'
 startTime = 3000
-endTime = 22000
+endTime = 50000
 df = pd.read_excel(r'./Labeled/'+filename+'.xlsx', sheet_name='Data')
-df['DATETIME'] = pd.to_datetime(df[['YEAR','MONTH','DAY','HOUR','MINUTE']])
+df['DATETIME'] = pd.to_datetime(df[['YEAR','MONTH','DAY','HOUR','MINUTE','SECOND']])
 
 # Resample
-filter = (df['SECOND']==0)
+filterSec = (df['SECOND']>=0)
 period = (df['PASSED_SECONDS']>=startTime) & (df['PASSED_SECONDS']<=endTime)
-groups = df[filter & period].groupby(['YEAR','MONTH','DAY','HOUR','MINUTE','SECOND']).first().set_index('DATETIME')
-
+groups = df[filterSec & period].groupby(['YEAR','MONTH','DAY','HOUR','MINUTE']).first().set_index('DATETIME')
+final = groups.resample('2T').first()
 # Write Resampled File
 # groups.to_csv(+filename, mode='a',header=True)
-write_df_csv('./Resampled/', filename+'_'+Analysis+'.csv',groups)
+write_df_csv('./Resampled/', filename+'_'+Analysis+'.csv',final)
