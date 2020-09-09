@@ -63,8 +63,6 @@ fluidLossMass_g.loc[fluidLossMass_g['PASSED_SECONDS'] > zeroTimeExp2,'Exp2'] = f
 psia2Pa = 6894.76
 psig2Pa = psia2Pa-corr
 patmpsi = 14.7
-mu = 0.015
-sigma = 0.004
 patmPa = psia2Pa*patmpsi + PZmin
 colLength = 4
 pressureResFile = filename+'_PressurePerExp'
@@ -73,8 +71,9 @@ flowrateResFile = filename+'_Flowrate'
 
 # Initialize Figures
 fig,ax = plt.subplots(3,3)
+mu = 0.015
+sigma = 0.004
 timeMod = (passed_seconds+1000)/5000
-a=1
 # Define Time Series for each pressure sensor\
     # P_1B;P_1C;FL_M_2A;P_2B;P_2C;P_3B;P_3C;P_4A;P_4B;P_4C;P_5B;P_5C;P_6A;P_6B;P_6C;P_7B;P_7C;P_8A;P_8B;P_8C;P_9B;P_9C
 module_1_sensors = ['P_1B']
