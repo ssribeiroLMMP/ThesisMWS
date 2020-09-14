@@ -19,28 +19,35 @@ plt.rcParams['text.latex.preamble'] = [r'\usepackage{amsmath}']
 
 
 # Read Resampled Experiment simDF
-tEnd = 11000
-SimShow = False #True # 
-rawShow = True # False # 
+tEnd = 16000
+SimShow = False # True #
+rawShow = True #False #  
 avgShow = False #True # 
 errorShow = False #True # 
+# fluidLoss = True #False #
 every = 1
-testDate = '20160114'
-Analysis = 'LongCure'
+# testDate = '20160114';fluidLoss = True#GasTightFluidLoss
+# testDate = '20150624';fluidLoss = False#GasTightFluidNoFluidLoss
+testDate = '20151005';fluidLoss = True#NeatFluidFluidLoss
+# testDate = '20150731';fluidLoss = False#NeatFluidNoFluidLoss
+Analysis = 'LongCure';keep = 'Keep'
 colLength = 4
 simFile = testDate+'_pressurePerDepth'
 filename = testDate+'_'+Analysis
 cmap = cm.get_cmap('jet')
-df = pd.read_csv(r'./Resampled/'+filename+'.csv',sep=';')
+fileformat = '.pdf'
+df = pd.read_csv(r'./Resampled/'+filename+keep+'.csv',sep=';')
 
 pressure_Pa=df.iloc[:,[1,12,13,14,15,16]]
 pressure_Pa_raw=df.iloc[:,1:12]
-fluidLossMassDF=pd.concat([df.iloc[:,1],df.iloc[:,17:21]],axis=1)
+
+if fluidLoss:
+    fluidLossMassDF=pd.concat([df.iloc[:,1],df.iloc[:,17:21]],axis=1)
 
 ## Pressure File Name
 # pressureResFile = filename+'_PressurePerDepth';legNCol=5;legFontSize = 12; legOrder = [0,5,1,6,2,7,3,8,4,9]
 # pressureResFile = filename+'_PressureWithSim';legNCol=5;legFontSize = 12; legOrder = [0,5,10,1,6,11,2,7,12,3,8,13,4,9,14]
-pressureResFile = filename+'_PressurePerExp';legNCol=5;legFontSize = 12; legOrder = [0,1,2,3,4,5,6,7,8,9] #legOrder = [0,1,10,2,3,11,4,5,12,6,7,13,8,9,14]
+pressureResFile = filename+'_PressurePerExp';legNCol=5;legFontSize = 12; legOrder = [0,1,2,3,4,5,6,7,8,9] #legOrder = [0,1,10,2,3,11,4,5,12,6,7,13,8,9,14] #
 flowrateResFile = filename+'_ExpFluidLossMass'
 flowrateResFile2 = filename+'_FluiLossFlowrateFit'
 
@@ -133,7 +140,7 @@ ax2.set_xlabel('$t$(s)', fontsize=16)
 
 # Set Limits
 ax2.set_xlim([0,tEnd])
-ax2.set_ylim([90000,175000])
+ax2.set_ylim([60000,175000])
 
 # Set Legend 
 handles, labels = plt.gca().get_legend_handles_labels()
@@ -145,93 +152,103 @@ ax2.legend([handles[idx] for idx in order],[labels[idx] for idx in order],ncol=l
 fig2.set_size_inches(10, 7)
 
 # Save Figure
-fig2.savefig('./Images/'+pressureResFile+'.png',dpi=400)
+fig2.savefig('./Images/'+pressureResFile+fileformat,dpi=400)
 
 ## Fluid Loss Mass(g)
-fig3,ax3 = plt.subplots()
-fig4,ax4 = plt.subplots()
-ax5=ax3.twinx()
-# Fluid Loss Region Properties
-HFluidLoss = 0.2                # m
-ROut = 9*0.0254/2               # m
-AOut = 2*np.pi*ROut*HFluidLoss  # m²
-rhoOut = 1000                   # kg/m³
-
-# 
-# fluidLossMassDF = pd.concat([passed_seconds,fluidLossMass_g[fluidLossMass]],axis=1)
-# fluidLossMassDF.columns=['t(s)','m(g)']
-# fluidLossMassDF.drop(fluidLossMassDF[interestData].index, inplace = False)
-# fluidLossMassDF['mDot(kg/s)'] = fluidLossMassDF['m(g)'].diff()/fluidLossMassDF['t(s)'].diff()/1000
-# fluidLossMassDF.fillna(method = 'bfill',inplace=True)
-# fluidLossMassDF['Vr(m/s)']=fluidLossMassDF['mDot(kg/s)']*(1/(rhoOut*AOut)) 
-
-# Calculate Experimental Mean and Standard Deviation
-fluidLossMassDF['Mean_m'] = fluidLossMassDF.iloc[:,2:4].mean(axis=1)
-fluidLossMassDF['Std_m'] = fluidLossMassDF.iloc[:,2:4].std(axis=1,numeric_only=True)
-
-fluidLossMassPlot = fluidLossMassDF[interestData]
-x_data = fluidLossMassPlot['t(s)']
-y_data = fluidLossMassPlot['mDot(kg/s)']
-
-
-
-# # y_data[y_data <= ]
-def fitFunc(t, a, b, c, d, e, ts):
-    ti = 500
-    # return a*t + b
-    # return a*pow(1-b,t)
-    y = (t>=ti)*(a/(pow(3*t,b)) - (1/(c))*np.exp((t-ts)/(d)) + e) + (t<ti)*((4e-5/600)*t)
-    return y
-    # return a/(pow(t,b)) - (1/(c))*np.exp((t-ts)/(d))
-
-def func(x, a, b, c):
-
-    return a * np.exp(-b * x) + c
-
-# # Fit 
-a= 5.9 # ^= >
-b=1.62 # < = >
-c=50000 # ^ = ---^
-d=31000
-e=2.85e-5
-ts=1200
-params = [a, b, c, d, e, ts]
-# # params, params_covariance = optimize.curve_fit(fitFunc, x_data, y_data, p0=params)
-# # params, params_covariance = optimize.curve_fit(func, x_data, y_data, p0=[a,b,c])
-# print(params)
-
-# print(fluidLossMassPlot)
-ax4.plot(x_data,fluidLossMassPlot.iloc[:,2],  
-                        color='none',marker = '^',markeredgecolor = 'blue',
-                        label='$m_{FL_{e1}}$')
-ax4.plot(x_data,fluidLossMassPlot.iloc[:,3],  
-                        color='none',marker = 'o',markeredgecolor = 'blue',
-                        label='$m_{FL_{e2}}$')
-ax4.legend(fontsize=12)
-
-fluidLossMassPlot.plot(kind='scatter',x='t(s)',y='mDot(kg/s)', ax=ax5, 
-                        color='orange',label='$\dot{m}_{FL}$')
-ax3.fill_between(x_data,fluidLossMassPlot.iloc[:,5]+fluidLossMassPlot.iloc[:,6],
-                        fluidLossMassPlot.iloc[:,5]-fluidLossMassPlot.iloc[:,6],
-                        label='$m_{FL_{Er}}$',alpha=0.2)
-fluidLossMassPlot.plot(kind='scatter',x='t(s)',y='m(g)', ax=ax3,  
-                        color='blue',label='$m_{FL_{Avg}}$')#legend=None)
-ax5.plot(x_data, fitFunc(x_data, *params), 'k--',\
-        label='$FL_{fit}$')
-        # label='fit: a=%5.4g, b=%5.4g, c=%5.4g, d=%5.4g, e=%5.4g, ts=%5.4g' % tuple(params))
-# ax3.set_title(testDate)
-ax3.set_ylabel('$m_{FL}$(g)',fontsize=14,color='blue')
-ax5.set_ylabel('$\dot{m}_{FL}$(kg/s)',fontsize=14,color='orange')
-ax3.legend(fontsize=12,loc="upper left")
-ax5.legend(fontsize=12,loc="upper right")
-ax5.set_xlim([0,tEnd])
-ax3.set_xlabel('$t$(s)')
-ax3.set_ylim([0,120])
-ax4.set_ylabel('$m_{FL}$(g)',fontsize=14)
-ax4.set_xlabel('$t$(s)',fontsize=14)
-ax4.set_ylim([0,110])
-ax4.set_xlim([0,tEnd])
-ax5.set_ylim([0,0.00005])
 # # plt.show()
-fig3.savefig('./Images/'+flowrateResFile2+'.png',dpi=400)
-fig4.savefig('./Images/'+flowrateResFile+'.png',dpi=400)
+if fluidLoss:
+    fig3,ax3 = plt.subplots()
+    fig4,ax4 = plt.subplots()
+    ax5=ax3.twinx()
+    # Fluid Loss Region Properties
+    HFluidLoss = 0.2                # m
+    ROut = 9*0.0254/2               # m
+    AOut = 2*np.pi*ROut*HFluidLoss  # m²
+    rhoOut = 1000                   # kg/m³
+
+    # 
+    # fluidLossMassDF = pd.concat([passed_seconds,fluidLossMass_g[fluidLossMass]],axis=1)
+    # fluidLossMassDF.columns=['t(s)','m(g)']
+    # fluidLossMassDF.drop(fluidLossMassDF[interestData].index, inplace = False)
+    # fluidLossMassDF['mDot(kg/s)'] = fluidLossMassDF['m(g)'].diff()/fluidLossMassDF['t(s)'].diff()/1000
+    # fluidLossMassDF.fillna(method = 'bfill',inplace=True)
+    # fluidLossMassDF['Vr(m/s)']=fluidLossMassDF['mDot(kg/s)']*(1/(rhoOut*AOut)) 
+
+    # Calculate Experimental Mean and Standard Deviation
+    fluidLossMassDF['Mean_m'] = fluidLossMassDF.iloc[:,2:4].mean(axis=1)
+    fluidLossMassDF['Std_m'] = fluidLossMassDF.iloc[:,2:4].std(axis=1,numeric_only=True)
+
+    fluidLossMassPlot = fluidLossMassDF[interestData]
+    x_data = fluidLossMassPlot['t(s)']
+    y_data = fluidLossMassPlot['mDot(kg/s)']
+
+    # # y_data[y_data <= ]
+    def fitFunc(t, a, b, c, d, e, ts):
+        ti = 280
+        # return a*t + b
+        # return a*pow(1-b,t)
+        y = (t>=ti)*(a/(pow(3*t,b)) - (1/(c))*np.exp((t-ts)/(d)) + e) + (t<ti)*((7e-4/ti)*t)
+        # y = (t>=ti)*(a/(pow(3*t,b)) - (1/(c))*np.exp((t-ts)/(d)) + e) + (t<ti)*((4e-5/600)*t)
+        return y
+        # return a/(pow(t,b)) - (1/(c))*np.exp((t-ts)/(d))
+
+    def func(x, a, b, c):
+
+        return a * np.exp(-b * x) + c
+
+    # # # Fit  GasTight
+    # a= 6 # ^= >
+    # b=1.62 # < = >
+    # c=50000 # ^ = ---^
+    # d=31000
+    # e=2.85e-5
+    # ts=1200
+    
+    # # Fit  Neat
+    a= 5.95 # ^= >
+    b=1.33 # < = >
+    c=10800 # ^ = ---^
+    d=14000
+    e=1.99e-4
+    ts=4600
+
+    params = [a, b, c, d, e, ts]
+    # # params, params_covariance = optimize.curve_fit(fitFunc, x_data, y_data, p0=params)
+    # # params, params_covariance = optimize.curve_fit(func, x_data, y_data, p0=[a,b,c])
+    # print(params)
+
+    # print(fluidLossMassPlot)
+    ax4.plot(x_data,fluidLossMassPlot.iloc[:,2],  
+                            color='none',marker = '^',markeredgecolor = 'blue',
+                            label='$m_{FL_{e1}}$')
+    ax4.plot(x_data,fluidLossMassPlot.iloc[:,3],  
+                            color='none',marker = 'o',markeredgecolor = 'blue',
+                            label='$m_{FL_{e2}}$')
+    ax4.legend(fontsize=12)
+
+    fluidLossMassPlot.plot(kind='scatter',x='t(s)',y='mDot(kg/s)', ax=ax5, 
+                            color='orange',label='$\dot{m}_{FL}$')
+    ax3.fill_between(x_data,fluidLossMassPlot.iloc[:,5]+fluidLossMassPlot.iloc[:,6],
+                            fluidLossMassPlot.iloc[:,5]-fluidLossMassPlot.iloc[:,6],
+                            label='$m_{FL_{Er}}$',alpha=0.2)
+    fluidLossMassPlot.plot(kind='scatter',x='t(s)',y='m(g)', ax=ax3,  
+                            color='blue',label='$m_{FL_{Avg}}$')#legend=None)
+    ax5.plot(x_data, fitFunc(x_data, *params), 'k--',\
+            label='$FL_{fit}$')
+            # label='fit: a=%5.4g, b=%5.4g, c=%5.4g, d=%5.4g, e=%5.4g, ts=%5.4g' % tuple(params))
+    # ax3.set_title(testDate)
+    ax3.set_ylabel('$m_{FL}$(g)',fontsize=14,color='blue')
+    ax5.set_ylabel('$\dot{m}_{FL}$(kg/s)',fontsize=14,color='orange')
+    ax3.legend(fontsize=12,loc="upper left")
+    ax5.legend(fontsize=12,loc="upper right")
+    ax5.set_xlim([0,tEnd])
+    ax3.set_xlabel('$t$(s)')
+    ax3.set_ylim([0,fluidLossMassPlot['m(g)'].max()*1.3])
+    ax4.set_ylabel('$m_{FL}$(g)',fontsize=14)
+    ax4.set_xlabel('$t$(s)',fontsize=14)
+    ax4.set_ylim([0,fluidLossMassPlot['m(g)'].max()*1.2])
+    ax5.set_ylim([0,fluidLossMassPlot['mDot(kg/s)'].max()*1.3])
+    ax4.set_xlim([0,tEnd])
+    # # plt.show()
+    fig3.savefig('./Images/'+flowrateResFile2+fileformat,dpi=400)
+    fig4.savefig('./Images/'+flowrateResFile+fileformat,dpi=400)
