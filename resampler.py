@@ -29,9 +29,9 @@ def write_df_csv(path, filename, df):
             print("Not a valid input. Data is NOT saved!\n")
 
 # Read Experiment Dataframe
-# filename = '20160114';fluidLoss = True#GasTightFluidLoss
+filename = '20160114';fluidLoss = True#GasTightFluidLoss
 # filename = '20150624';fluidLoss = False#GasTightFluidNoFluidLoss
-filename = '20151005';fluidLoss = True#NeatFluidFluidLoss
+# filename = '20151005';fluidLoss = True#NeatFluidFluidLoss
 # filename = '20150731';fluidLoss = False#NeatFluidNoFluidLoss
 Analysis = 'LongCure'
 startTime = 3000
@@ -66,7 +66,7 @@ if fluidLoss:
     # Remove decresing or negative Masses
     fluidLossMass_g.loc[fluidLossMass_g[fluidLossMass] < 0,fluidLossMass] = 0
     fluidLossMass_g.loc[fluidLossMass_g['PASSED_SECONDS'] > zeroTime,fluidLossMass] = fluidLossMass_g[fluidLossMass].max()
-    muM = 0.018
+    muM = 0.015
     sigmaM = 0.001
     gap = 403
     timeModM = (passed_seconds+1000)/5000
@@ -79,10 +79,10 @@ if fluidLoss:
     fluidLossMass_g.loc[fluidLossMass_g['PASSED_SECONDS'] > zeroTime,'Exp2'] = fluidLossMass_g[fluidLossMass_g['PASSED_SECONDS']<=zeroTime+gap]['Exp2'].max()
 
 ######################################### Pressure
-zmin = 0.5
+zmin = 0.4
 PZmin = zmin*1752*9.81
-mu = 0.004
-sigma = 0.0009
+mu = 0.0033
+sigma = 0.0007
 
 def sigmoid(L,k,x0,x):
     return L/(1+np.exp(-k*(x-x0)))

@@ -17,25 +17,25 @@ plt.rc('font', family='serif')
 plt.rc('text', usetex=True)
 plt.rcParams['text.latex.preamble'] = [r'\usepackage{amsmath}']
 
-
+detail = '_'
 # Read Resampled Experiment simDF
-tEnd = 16000
-SimShow = False # True #
-rawShow = True #False #  
-avgShow = False #True # 
-errorShow = False #True # 
-# fluidLoss = True #False #
+tEnd = 12500
+SimShow = True; detail='_Eta01.3k_EtaInf0.02' # False # 
+rawShow = False # True # 
+avgShow = True #False # 
+errorShow = True #False # 
+fluidLoss = False #True #
+fileformat = '.png'
 every = 1
-# testDate = '20160114';fluidLoss = True#GasTightFluidLoss
+testDate = '20160114';fluidLoss = True; #GasTightFluidLoss
 # testDate = '20150624';fluidLoss = False#GasTightFluidNoFluidLoss
-testDate = '20151005';fluidLoss = True#NeatFluidFluidLoss
+# testDate = '20151005';fluidLoss = True#NeatFluidFluidLoss
 # testDate = '20150731';fluidLoss = False#NeatFluidNoFluidLoss
-Analysis = 'LongCure';keep = 'Keep'
+Analysis = 'LongCure';keep = ''
 colLength = 4
 simFile = testDate+'_pressurePerDepth'
 filename = testDate+'_'+Analysis
 cmap = cm.get_cmap('jet')
-fileformat = '.pdf'
 df = pd.read_csv(r'./Resampled/'+filename+keep+'.csv',sep=';')
 
 pressure_Pa=df.iloc[:,[1,12,13,14,15,16]]
@@ -46,8 +46,8 @@ if fluidLoss:
 
 ## Pressure File Name
 # pressureResFile = filename+'_PressurePerDepth';legNCol=5;legFontSize = 12; legOrder = [0,5,1,6,2,7,3,8,4,9]
-# pressureResFile = filename+'_PressureWithSim';legNCol=5;legFontSize = 12; legOrder = [0,5,10,1,6,11,2,7,12,3,8,13,4,9,14]
-pressureResFile = filename+'_PressurePerExp';legNCol=5;legFontSize = 12; legOrder = [0,1,2,3,4,5,6,7,8,9] #legOrder = [0,1,10,2,3,11,4,5,12,6,7,13,8,9,14] #
+pressureResFile = filename+'_PressureWithSim';legNCol=5;legFontSize = 12; legOrder = [0,5,10,1,6,11,2,7,12,3,8,13,4,9,14]
+# pressureResFile = filename+'_PressurePerExp';legNCol=5;legFontSize = 12; legOrder = [0,1,2,3,4,5,6,7,8,9] #legOrder = [0,1,10,2,3,11,4,5,12,6,7,13,8,9,14] #
 flowrateResFile = filename+'_ExpFluidLossMass'
 flowrateResFile2 = filename+'_FluiLossFlowrateFit'
 
@@ -56,14 +56,14 @@ flowrateResFile2 = filename+'_FluiLossFlowrateFit'
 # fig,ax = plt.subplots(3,3)
 
 # Interest Data
-interestData = (df['t(s)'] <= tEnd) # & (pressure_Pa['t(s)']>=0)
+interestData = (df['t(s)'] <= 20000) # & (pressure_Pa['t(s)']>=0)
 
 fig2, ax2 = plt.subplots()
 colorsRaw = plt.cm.jet(np.linspace(0,1,5))
 
 ## Simulated Pressure Results
 if SimShow:
-    simDF = pd.read_csv('./Simulated/'+simFile+'.csv') #Time(s),Depth(m),Pressure(Pa)
+    simDF = pd.read_csv('./Simulated/'+simFile+detail+'.csv') #Time(s),Depth(m),Pressure(Pa)
     
     i=0
     maxTime = simDF['Time(s)'].max()
@@ -99,6 +99,7 @@ if rawShow:
     # pos2 = [pos1.x0 + 0.03, pos1.y0,  pos1.width, pos1.height] 
     # ax2.set_position(pos2) # set a new position
     ax2.legend(ncol=legNCol,fontsize= legFontSize)
+    ax2.set_title(detail[1:])
 #
 i=0
 k=0
@@ -183,13 +184,14 @@ if fluidLoss:
     y_data = fluidLossMassPlot['mDot(kg/s)']
 
     # # y_data[y_data <= ]
-    def fitFunc(t, a, b, c, d, e, ts):
-        ti = 280
+    def fitFunc(t, a, b, c, d, e, ts,ti,FLMax):
+        # ti = 280
         # return a*t + b
         # return a*pow(1-b,t)
-        y = (t>=ti)*(a/(pow(3*t,b)) - (1/(c))*np.exp((t-ts)/(d)) + e) + (t<ti)*((7e-4/ti)*t)
+        y = (t>=ti)*(a/(pow(3*t,b)) - (1/(c))*np.exp((t-ts)/(d)) + e) + (t<ti)*((FLMax/ti)*t)
         # y = (t>=ti)*(a/(pow(3*t,b)) - (1/(c))*np.exp((t-ts)/(d)) + e) + (t<ti)*((4e-5/600)*t)
-        return y
+        y[np.isnan(y)] = 0
+        return np.maximum(y.values,np.zeros(len(y)))
         # return a/(pow(t,b)) - (1/(c))*np.exp((t-ts)/(d))
 
     def func(x, a, b, c):
@@ -197,22 +199,26 @@ if fluidLoss:
         return a * np.exp(-b * x) + c
 
     # # # Fit  GasTight
-    # a= 6 # ^= >
-    # b=1.62 # < = >
-    # c=50000 # ^ = ---^
-    # d=31000
-    # e=2.85e-5
-    # ts=1200
+    a= 6 # ^= >
+    b=1.62 # < = >
+    c=50000 # ^ = ---^
+    d=31000
+    e=2.85e-5
+    ts=1200
+    ti=600
+    FLMax=4e-5 
     
     # # Fit  Neat
-    a= 5.95 # ^= >
-    b=1.33 # < = >
-    c=10800 # ^ = ---^
-    d=14000
-    e=1.99e-4
-    ts=4600
+    # a= 6.5 # ^= >
+    # b=1.39 # < = >
+    # c=8700 # ^ = ---^
+    # d=14000
+    # e=2.65e-4
+    # ts=1800
+    # ti=250
+    # FLMax = 7e-4
 
-    params = [a, b, c, d, e, ts]
+    params = [a, b, c, d, e, ts, ti, FLMax]
     # # params, params_covariance = optimize.curve_fit(fitFunc, x_data, y_data, p0=params)
     # # params, params_covariance = optimize.curve_fit(func, x_data, y_data, p0=[a,b,c])
     # print(params)
@@ -241,14 +247,16 @@ if fluidLoss:
     ax5.set_ylabel('$\dot{m}_{FL}$(kg/s)',fontsize=14,color='orange')
     ax3.legend(fontsize=12,loc="upper left")
     ax5.legend(fontsize=12,loc="upper right")
-    ax5.set_xlim([0,tEnd])
+    # ax5.set_xlim([0,np.max([tEnd,x_data[y_data>0].max()])])
+    ax5.set_xlim([0,np.max([tEnd,14000])])
     ax3.set_xlabel('$t$(s)')
     ax3.set_ylim([0,fluidLossMassPlot['m(g)'].max()*1.3])
     ax4.set_ylabel('$m_{FL}$(g)',fontsize=14)
     ax4.set_xlabel('$t$(s)',fontsize=14)
     ax4.set_ylim([0,fluidLossMassPlot['m(g)'].max()*1.2])
     ax5.set_ylim([0,fluidLossMassPlot['mDot(kg/s)'].max()*1.3])
-    ax4.set_xlim([0,tEnd])
+    # ax4.set_xlim([0,np.max([tEnd,x_data[y_data>0].max()])])
+    ax4.set_xlim([0,np.max([tEnd,14000])])
     # # plt.show()
     fig3.savefig('./Images/'+flowrateResFile2+fileformat,dpi=400)
     fig4.savefig('./Images/'+flowrateResFile+fileformat,dpi=400)
